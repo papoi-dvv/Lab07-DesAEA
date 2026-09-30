@@ -1,0 +1,9 @@
+DOCUMENTO-REQUERIMIENTO.md
+División-Trabajo.md
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
