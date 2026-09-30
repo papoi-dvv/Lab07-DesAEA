@@ -11,12 +11,15 @@ public class PrestamoNegocio
     private readonly PrestamoRepositorio _prestamoRepositorio;
     private readonly ILibroRepositorio _libroRepositorio;
     private readonly SocioRepositorio _socioRepositorio;
+    private readonly DetallePrestamoRepositorio _detalleRepositorio;
 
-    public PrestamoNegocio(PrestamoRepositorio prestamoRepositorio, ILibroRepositorio libroRepositorio, SocioRepositorio socioRepositorio)
+    public PrestamoNegocio(PrestamoRepositorio prestamoRepositorio, ILibroRepositorio libroRepositorio,
+        SocioRepositorio socioRepositorio, DetallePrestamoRepositorio detalleRepositorio)
     {
         _prestamoRepositorio = prestamoRepositorio;
         _libroRepositorio = libroRepositorio;
         _socioRepositorio = socioRepositorio;
+        _detalleRepositorio = detalleRepositorio;
     }
 
     /// <summary>
@@ -30,6 +33,14 @@ public class PrestamoNegocio
         if (libroIds.Count == 0)
         {
             throw new ReglaNegocioException("Debe seleccionar al menos un libro para el prestamo.");
+        }
+        if (libroIds.Distinct().Count() != libroIds.Count)
+        {
+            throw new ReglaNegocioException("No se puede agregar el mismo libro mas de una vez al prestamo.");
+        }
+        if (fechaLimite.Date < fechaPrestamo.Date)
+        {
+            throw new ReglaNegocioException("La fecha limite no puede ser anterior a la fecha del prestamo.");
         }
 
         var socio = await _socioRepositorio.BuscarPorIdAsync(socioId, ct)
@@ -72,7 +83,8 @@ public class PrestamoNegocio
         var prestamo = await _prestamoRepositorio.BuscarPorIdAsync(prestamoId, ct)
             ?? throw new ReglaNegocioException("El prestamo indicado no existe.");
 
-        var detalle = (await _prestamoRepositorio.ListarDetallePorPrestamoAsync(prestamoId, ct))
+        var detalles = await _detalleRepositorio.ListarPorPrestamoAsync(prestamoId, ct);
+        var detalle = detalles
             .FirstOrDefault(d => d.LibroId == libroId)
             ?? throw new ReglaNegocioException("El libro indicado no pertenece a este prestamo.");
 
@@ -81,7 +93,9 @@ public class PrestamoNegocio
             throw new ReglaNegocioException("Ese libro del prestamo ya fue devuelto.");
         }
 
-        await _prestamoRepositorio.RegistrarDevolucionAsync(prestamoId, libroId, fechaDevolucion, ct);
+        var esUltimoPendiente = detalles.Count(d => d.FechaDevolucion is null) == 1;
+        await _prestamoRepositorio.RegistrarDevolucionAsync(
+            prestamoId, libroId, fechaDevolucion, esUltimoPendiente, ct);
 
         return CalcularMulta(prestamo.FechaLimite, fechaDevolucion);
     }
@@ -94,4 +108,10 @@ public class PrestamoNegocio
 
     public Task<List<ReportePrestamoItem>> ReportePorRangoFechasAsync(DateTime fechaInicio, DateTime fechaFin, CancellationToken ct = default) =>
         _prestamoRepositorio.ReportePorRangoFechasAsync(fechaInicio, fechaFin, ct);
+
+    public Task<Prestamo?> BuscarPorIdAsync(int prestamoId, CancellationToken ct = default) =>
+        _prestamoRepositorio.BuscarPorIdAsync(prestamoId, ct);
+
+    public Task<List<DetallePrestamo>> ListarDetalleAsync(int prestamoId, CancellationToken ct = default) =>
+        _detalleRepositorio.ListarPorPrestamoAsync(prestamoId, ct);
 }

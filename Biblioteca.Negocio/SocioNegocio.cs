@@ -29,6 +29,7 @@ public class SocioNegocio
 
     public async Task<int> InsertarAsync(Socio socio, CancellationToken ct = default)
     {
+        ValidarCampos(socio);
         await ValidarDniDuplicadoAsync(socio, ct);
         return await _socioRepositorio.InsertarAsync(socio, ct);
     }
@@ -41,6 +42,7 @@ public class SocioNegocio
 
     public async Task ActualizarAsync(Socio socio, CancellationToken ct = default)
     {
+        ValidarCampos(socio);
         await ValidarDniDuplicadoAsync(socio, ct);
         await _socioRepositorio.ActualizarAsync(socio, ct);
     }
@@ -78,6 +80,19 @@ public class SocioNegocio
         if (existente is not null && existente.SocioId != socio.SocioId)
         {
             throw new ReglaNegocioException($"Ya existe un socio registrado con el DNI '{socio.DNI}'.");
+        }
+    }
+
+    private static void ValidarCampos(Socio socio)
+    {
+        if (string.IsNullOrWhiteSpace(socio.DNI) || string.IsNullOrWhiteSpace(socio.Nombre) ||
+            string.IsNullOrWhiteSpace(socio.Email))
+        {
+            throw new ReglaNegocioException("El DNI, el nombre y el correo son obligatorios.");
+        }
+        if (!socio.Email.Contains('@'))
+        {
+            throw new ReglaNegocioException("Ingrese un correo electronico valido.");
         }
     }
 }

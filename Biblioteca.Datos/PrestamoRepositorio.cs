@@ -127,11 +127,11 @@ public class PrestamoRepositorio
     }
 
     /// <summary>
-    /// Registra la devolucion de un libro de un prestamo, repone su ejemplar y, si ya no
-    /// quedan libros pendientes en ese prestamo, marca la cabecera como Devuelto. Todo en
-    /// una unica transaccion.
+    /// Registra la devolucion de un libro, repone su ejemplar y aplica el estado indicado
+    /// por la capa de Negocio. Todo se confirma dentro de una unica transaccion.
     /// </summary>
-    public async Task RegistrarDevolucionAsync(int prestamoId, int libroId, DateTime fechaDevolucion, CancellationToken ct = default)
+    public async Task RegistrarDevolucionAsync(int prestamoId, int libroId, DateTime fechaDevolucion,
+        bool marcarPrestamoDevuelto, CancellationToken ct = default)
     {
         await using var conn = DbHelper.CrearConexion();
         await conn.OpenAsync(ct);
@@ -153,17 +153,7 @@ public class PrestamoRepositorio
                 await cmdStock.ExecuteNonQueryAsync(ct);
             }
 
-            bool quedanPendientes;
-            await using (var cmdConsulta = new SqlCommand("dbo.sp_Prestamo_QuedanPendientes", conn, tx) { CommandType = CommandType.StoredProcedure })
-            {
-                cmdConsulta.Parameters.AddWithValue("@PrestamoId", prestamoId);
-                var outFlag = cmdConsulta.Parameters.Add("@QuedanPendientes", SqlDbType.Bit);
-                outFlag.Direction = ParameterDirection.Output;
-                await cmdConsulta.ExecuteNonQueryAsync(ct);
-                quedanPendientes = (bool)outFlag.Value;
-            }
-
-            if (!quedanPendientes)
+            if (marcarPrestamoDevuelto)
             {
                 await using var cmdEstado = new SqlCommand("dbo.sp_Prestamo_ActualizarEstado", conn, tx) { CommandType = CommandType.StoredProcedure };
                 cmdEstado.Parameters.AddWithValue("@PrestamoId", prestamoId);

@@ -4,6 +4,35 @@
              xmlns:local="clr-namespace:Biblioteca.WPF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#1F4E78" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#2E75B6" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#F4F7FA" />
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="7,5" />
+            <Setter Property="Margin" Value="4" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="7,5" />
+            <Setter Property="Margin" Value="4" />
+        </Style>
+        <Style TargetType="DatePicker">
+            <Setter Property="Margin" Value="4" />
+        </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="SelectionMode" Value="Single" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="AlternatingRowBackground" Value="#F2F6FA" />
+        </Style>
     </Application.Resources>
 </Application>
